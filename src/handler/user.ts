@@ -32,41 +32,47 @@ export const createUser = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.log(error);
     error.type = 'input';
     next(error);
   }
 };
 
-export const signin = async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: {
-      email: req.body.email,
-    },
-  });
+export const signin = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email: req.body.email,
+      },
+    });
 
-  if (!user) {
-    res.status(401);
-    res.json({ message: 'Email is not in our system' });
-    return;
+    if (!user) {
+      res.status(401);
+      res.json({ message: 'Email is not in our system' });
+      return;
+    }
+
+    const isValid = await comparePasswords(req.body.password, user.password);
+
+    if (!isValid) {
+      res.status(401);
+      res.json({ message: 'Credentials does not match' });
+      return;
+    }
+
+    const token = createJWT(user);
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      token,
+      type: user.type,
+    });
+  } catch (error) {
+    error.type = 'input';
+    next(error);
   }
-
-  const isValid = await comparePasswords(req.body.password, user.password);
-
-  if (!isValid) {
-    res.status(401);
-    res.json({ message: 'Credentials does not match' });
-    return;
-  }
-
-  const token = createJWT(user);
-
-  res.json({
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    token,
-    type: user.type,
-  });
 };
 
 export const getUserInfo = async (req, res) => {
@@ -83,16 +89,22 @@ export const getUserInfo = async (req, res) => {
   });
 };
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
+    const data: { email: string; username: string; password?: string } = {
+      email: req.body.email,
+      username: req.body.username,
+    };
+
+    if (req.body.password) {
+      data.password = await hashPassword(req.body.password);
+    }
+
     const user = await prisma.user.update({
       where: {
         id: req.user.id,
       },
-      data: {
-        email: req.body.email,
-        username: req.body.username,
-      },
+      data,
     });
 
     if (!user) {
@@ -105,5 +117,8 @@ export const updateUser = async (req, res) => {
       type: user.type,
       id: user.id,
     });
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
 };

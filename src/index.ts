@@ -1,21 +1,18 @@
 import express from 'express';
-import { body, check } from 'express-validator';
-
+import { instrument } from '@socket.io/admin-ui';
 import { Server } from 'socket.io';
+import morgan from 'morgan';
 import cors from 'cors';
 
-import { getCurrentUser, userLeave, userJoin } from './utils';
-import { instrument } from '@socket.io/admin-ui';
-import { createUser, getUserInfo, signin, updateUser } from './handler/user';
-import { generateToken, getToken, updateToken } from './handler/token';
-import { protect } from './modules/auth';
-import { handleInputErrors } from './modules/middleware';
+import { addUserType, getUser, removeUserType } from './modules/users';
+import router from './router';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'));
 
 const server = app.listen(3001, () => {
   console.log(`Server started at port 3001`);
@@ -33,30 +30,10 @@ instrument(io, {
   mode: 'development',
 });
 
-app.post(
-  '/signup',
-  check('username').notEmpty().withMessage({
-    message: 'Username is required',
-  }),
-  check('email').notEmpty().withMessage({
-    message: 'Email is required',
-  }),
-  check('password').notEmpty().withMessage({
-    message: 'Password is required',
-  }),
-  handleInputErrors,
-  createUser
-);
-
-app.post('/login', signin);
-
-app.get('/generate-token', protect, generateToken);
-app.put('/token/:id', protect, updateToken);
-app.get('/token', protect, getToken);
-app.get('/user', protect, getUserInfo);
-app.put('/user', protect, updateUser);
+app.use('/api/v1/', router);
 
 app.use((err, req, res, next) => {
+  console.log(err);
   if (err.type === 'auth') {
     res.status(401).json({ message: 'unauthorized' });
   } else if (err.type === 'input') {
@@ -71,10 +48,8 @@ io.on('connection', (socket) => {
   console.log(socket.handshake.auth.token, 'authToken k ayo');
 
   socket.on('live-translate', (data) => {
-    console.log(socket.id);
+    const user = getUser(socket.id);
 
-    const user = getCurrentUser(socket.id);
-    console.log(user);
     if (user && user.room) {
       io.to(user.room).emit('live-translate-receive', data);
     } else {
@@ -95,8 +70,12 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const user = userJoin(socket.id, type, room);
-    console.log(user);
+    const { error, user } = addUserType({ id: socket.id, type, room });
+
+    if (error) {
+      cb({ success: false, message: error });
+      return;
+    }
 
     socket.join(user.room);
 
@@ -108,8 +87,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leave-room', (room, cb) => {
-    console.log(`leave-room, ${room}`);
-    userLeave(socket.id);
+    removeUserType(socket.id);
     socket.leave(room);
     cb(true);
   });
