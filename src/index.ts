@@ -14,13 +14,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-const server = app.listen(3001, () => {
-  console.log(`Server started at port 3001`);
+const PORT = process.env.PORT || 3001;
+
+const server = app.listen(PORT, () => {
+  console.log(`Server started at port ${PORT}`);
 });
 
 const io = new Server(server, {
   cors: {
-    origin: ['localhost:5173', 'https://live-caption.netlify.app/'],
+    origin: [process.env.BASE_URL, 'https://live-caption.netlify.app/'],
     credentials: true,
   },
 });
