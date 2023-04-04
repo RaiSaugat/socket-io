@@ -20,7 +20,7 @@ const server = app.listen(3001, () => {
 
 const io = new Server(server, {
   cors: {
-    origin: ['localhost:5173', 'https://admin.socket.io'],
+    origin: ['localhost:5173', 'https://live-caption.netlify.app/'],
     credentials: true,
   },
 });
@@ -28,6 +28,10 @@ const io = new Server(server, {
 instrument(io, {
   auth: false,
   mode: 'development',
+});
+
+app.get('/api/v1', (req, res) => {
+  res.send({ message: 'Hello World' });
 });
 
 app.use('/api/v1/', router);

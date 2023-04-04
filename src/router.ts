@@ -16,8 +16,14 @@ router.post(
   check('email').notEmpty().withMessage({
     message: 'Email is required',
   }),
+  check('email').isEmail().withMessage({
+    message: 'Invalid Email',
+  }),
   check('password').notEmpty().withMessage({
     message: 'Password is required',
+  }),
+  check('password').isLength({ min: 8 }).withMessage({
+    message: 'Password must be at least 8 characters long',
   }),
   handleInputErrors,
   createUser
@@ -34,8 +40,22 @@ router.post(
   handleInputErrors,
   signin
 );
+
 router.get('/user', protect, getUserInfo);
-router.put('/user', protect, updateUser);
+router.put(
+  '/user',
+  check('username').notEmpty().withMessage({
+    message: 'Username is required',
+  }),
+  check('email').notEmpty().withMessage({
+    message: 'Email is required',
+  }),
+  check('email').isEmail().withMessage({
+    message: 'Invalid Email',
+  }),
+  protect,
+  updateUser
+);
 
 router.get('/generate-token', protect, generateToken);
 router.put('/token/:id', protect, updateToken);
