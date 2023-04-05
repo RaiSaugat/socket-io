@@ -3,6 +3,7 @@ import { instrument } from '@socket.io/admin-ui';
 import { Server } from 'socket.io';
 import morgan from 'morgan';
 import cors from 'cors';
+import helmet from 'helmet';
 
 import { addUserType, getUser, removeUserType } from './modules/users';
 import router from './router';
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(helmet());
 
 const PORT = process.env.PORT || 3001;
 
