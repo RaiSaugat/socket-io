@@ -1,7 +1,14 @@
+import { NextFunction, Request, Response } from 'express';
+
 import prisma from '../db';
 import { comparePasswords, createJWT, hashPassword } from '../modules/auth';
+import { IGetUserAuthInfoRequest } from '../types';
 
-export const createUser = async (req, res, next) => {
+export const createUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const isUserExist = await prisma.user.findFirst({
       where: {
@@ -38,7 +45,11 @@ export const createUser = async (req, res, next) => {
   }
 };
 
-export const signin = async (req, res, next) => {
+export const signin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
@@ -87,7 +98,11 @@ export const getUserInfo = async (req, res) => {
   });
 };
 
-export const updateUser = async (req, res, next) => {
+export const updateUser = async (
+  req: IGetUserAuthInfoRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const data: { email: string; username: string; password?: string } = {
       email: req.body.email,
@@ -97,13 +112,14 @@ export const updateUser = async (req, res, next) => {
     if (req.body.password) {
       data.password = await hashPassword(req.body.password);
     }
+
     const isUserExist = await prisma.user.findFirst({
       where: {
         email: req.body.email,
       },
     });
 
-    if (isUserExist) {
+    if (isUserExist && req.body.updateEmail) {
       res.status(403).json({ message: 'Email already exists' });
     } else {
       const user = await prisma.user.update({

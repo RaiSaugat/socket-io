@@ -1,8 +1,15 @@
+import { NextFunction, Request, Response } from 'express';
+
 import prisma from '../db';
 import { hashPassword } from '../modules/auth';
 import { generateRandomText } from '../utils';
+import { IGetUserAuthInfoRequest } from '../types';
 
-export const generateToken = async (req, res, next) => {
+export const generateToken = async (
+  req: IGetUserAuthInfoRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const data = await prisma.token.create({
       data: {
@@ -22,7 +29,11 @@ export const generateToken = async (req, res, next) => {
   }
 };
 
-export const updateToken = async (req, res, next) => {
+export const updateToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const data = await prisma.token.update({
       where: {
@@ -40,7 +51,11 @@ export const updateToken = async (req, res, next) => {
   }
 };
 
-export const getToken = async (req, res, next) => {
+export const getToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const isUserExist = await prisma.user.findFirst({
       where: {

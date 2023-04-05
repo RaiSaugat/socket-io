@@ -1,6 +1,11 @@
 import { validationResult } from 'express-validator';
+import { NextFunction, Request, Response } from 'express';
 
-export const handleInputErrors = (req, res, next) => {
+export const handleInputErrors = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const errors = validationResult(req);
 
   const mappedErrors = errors.array().map((error) => {
