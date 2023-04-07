@@ -5,7 +5,12 @@ import morgan from 'morgan';
 import cors from 'cors';
 import helmet from 'helmet';
 
-import { addUserType, getUser, removeUserType } from './modules/users';
+import {
+  addUserType,
+  getUser,
+  getUsers,
+  removeUserType,
+} from './modules/users';
 import router from './router';
 
 const app = express();
@@ -41,7 +46,6 @@ app.get('/api/v1', (req, res) => {
 app.use('/api/v1/', router);
 
 app.use((err, req, res, next) => {
-  console.log(err);
   if (err.type === 'auth') {
     res.status(401).json({ message: 'unauthorized' });
   } else if (err.type === 'input') {
@@ -52,9 +56,6 @@ app.use((err, req, res, next) => {
 });
 
 io.on('connection', (socket) => {
-  console.log(`Connected,${socket.id}`);
-  console.log(socket.handshake.auth.token, 'authToken k ayo');
-
   socket.on('live-translate', (data) => {
     const user = getUser(socket.id);
 
@@ -67,21 +68,20 @@ io.on('connection', (socket) => {
 
   socket.on('join-room', ({ type, room, masterToken }, cb) => {
     const token = socket.handshake.auth.token;
-    console.log(token, 'token');
-    console.log(masterToken, 'masterToken');
 
     if (token !== masterToken) {
-      cb({
-        success: false,
-        message: 'Invalid token',
-      });
+      cb &&
+        cb({
+          success: false,
+          message: 'Invalid token',
+        });
       return;
     }
 
     const { error, user } = addUserType({ id: socket.id, type, room });
 
     if (error) {
-      cb({ success: false, message: error });
+      cb && cb({ success: false, message: error });
       return;
     }
 
@@ -91,11 +91,11 @@ io.on('connection', (socket) => {
       .to(user.room)
       .emit('message', `${user.type} has joined the chat`);
 
-    cb({ success: true, message: user.room });
+    cb && cb({ success: true, message: user.room });
   });
 
-  socket.on('leave-room', (room, cb) => {
-    removeUserType(socket.id);
+  socket.on('leave-room', (room, type, cb) => {
+    removeUserType(type);
     socket.leave(room);
     cb(true);
   });

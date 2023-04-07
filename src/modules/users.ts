@@ -4,6 +4,10 @@ export const addUserType = ({ id, type, room }) => {
   room = room.trim().toLowerCase();
   type = type.trim().toLowerCase();
 
+  console.log(`Joining room ${room} ${type} ${id}`);
+
+  console.log(users);
+
   const existingUserType = users.find((user) => {
     return user.room === room && user.type === type;
   });
@@ -17,9 +21,9 @@ export const addUserType = ({ id, type, room }) => {
   return { user };
 };
 
-export const removeUserType = (id) => {
+export const removeUserType = (type: string) => {
   const index = users.findIndex((user) => {
-    return user.id === id;
+    return user.type.toLowerCase() === type.toLowerCase();
   });
 
   if (index !== -1) {
@@ -27,7 +31,9 @@ export const removeUserType = (id) => {
   }
 };
 
-export const getUser = (id) => users.find((user) => user.id === id);
+export const getUser = (id: string) => users.find((user) => user.id === id);
 
-export const getUsersInRoom = (room) =>
+export const getUsersInRoom = (room: string) =>
   users.filter((user) => user.room === room);
+
+export const getUsers = () => users;
